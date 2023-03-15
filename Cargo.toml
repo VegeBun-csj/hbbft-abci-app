@@ -1,5 +1,6 @@
 [workspace]
-members = ["node", "hbbft-abci", "evm-abci"]
+# members = ["node", "hbbft-abci", "evm-abci"]
+members = ["hbbft-abci", "evm-abci"]
 
 # TODO: Remove once new revm release
 [patch.crates-io]
