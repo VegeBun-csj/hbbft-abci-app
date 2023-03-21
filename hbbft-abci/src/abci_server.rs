@@ -13,21 +13,27 @@ use warp::{Filter, Rejection};
 use std::net::SocketAddr;
 
 /// Simple HTTP API server which listens to messages on:
-/// * `broadcast_tx`: forwards them to Narwhal's mempool/worker socket, which will proceed to put
+/// * `broadcast_tx`: forwards them to hbbft bind address socket, which will proceed to put
 /// it in the consensus process and eventually forward it to the application.
 /// * `abci_query`: forwards them over a channel to a handler (typically the application).
 pub struct AbciApi<T> {
-    mempool_address: SocketAddr,
+    // TODO: 内存池，会用到Queueing HoneyBadger
+    // mempool_address: SocketAddr,
+
+    // hbbft bind addr(connect one node)
+    bind_address: SocketAddr,
+
+    // value
     tx: Sender<(OneShotSender<T>, AbciQueryQuery)>,
 }
 
 impl<T: Send + Sync + std::fmt::Debug> AbciApi<T> {
     pub fn new(
-        mempool_address: SocketAddr,
+        bind_address: SocketAddr,
         tx: Sender<(OneShotSender<T>, AbciQueryQuery)>,
     ) -> Self {
         Self {
-            mempool_address,
+            bind_address,
             tx,
         }
     }
@@ -35,12 +41,15 @@ impl<T: Send + Sync + std::fmt::Debug> AbciApi<T> {
 
 impl AbciApi<ResponseQuery> {
     pub fn routes(self) -> impl Filter<Extract = impl warp::Reply, Error = Rejection> + Clone {
+
+        // 如果收到的是tx请求
         let route_broadcast_tx = warp::path("broadcast_tx")
             .and(warp::query::<BroadcastTxQuery>())
             .and_then(move |req: BroadcastTxQuery| async move {
                 log::warn!("broadcast_tx: {:?}", req);
 
-                let stream = TcpStream::connect(self.mempool_address)
+                // 根据这个地址创建一个连接
+                let stream = TcpStream::connect(self.bind_address)
                     .await
                     .wrap_err(format!(
                         "ROUTE_BROADCAST_TX failed to connect to {}",
@@ -56,6 +65,7 @@ impl AbciApi<ResponseQuery> {
                 }
             });
 
+        // 如果收到的是query
         let route_abci_query = warp::path("abci_query")
             .and(warp::query::<AbciQueryQuery>())
             .and_then(move |req: AbciQueryQuery| {
