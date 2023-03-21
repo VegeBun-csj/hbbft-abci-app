@@ -1,5 +1,6 @@
 use crate::AbciQueryQuery;
 use std::net::SocketAddr;
+use hbbft::Contribution;
 use tokio::sync::mpsc::Receiver;
 use tokio::sync::oneshot::Sender as OneShotSender;
 
@@ -17,6 +18,7 @@ use hbbft::broadcast::{Broadcast, Message};
 use hbbft::{
     crypto::{PublicKey, SecretKey},
     sync_key_gen::{Ack, AckOutcome, Part, PartOutcome, SyncKeyGen},
+    Contribution
 };
 
 /// The engine drives the ABCI Application by concurrently polling for:
@@ -66,7 +68,7 @@ impl Engine {
     }
 
     /// Receives an ordered list of certificates and apply any application-specific logic.
-    pub async fn run(&mut self, mut rx_output: Receiver<Certificate>) -> eyre::Result<()> {
+    pub async fn run(&mut self, mut rx_output: Receiver<HBMessage<Contribution>>) -> eyre::Result<()> {
         self.init_chain()?;
 
         loop {
@@ -76,9 +78,8 @@ impl Engine {
                     self.handle_abci_query(tx, req)?;
                 },
                 // 有交易传进来，需要进行共识的处理
-                Some(certificate) = rx_output.recv() => {
-                    //TODO:
-                    self.handle_contribution(certificate)?;
+                Some(contribution) = rx_output.recv() => {
+                    self.handle_contribution(contribution)?;
                 }
                 else => break,
             }
@@ -117,7 +118,7 @@ impl Engine {
 
     /// On each new contribution, increment the block height to proposed and run with
     /// BeginBlock -> DeliverTx each tx in the contribution -> EndBlock -> Commit event loop.
-    fn handle_contribution(&mut self, certificate: Certificate) -> eyre::Result<()> {
+    fn handle_contribution(&mut self, contribution: HBMessage<Contribution>) -> eyre::Result<()> {
         // increment block
         let proposed_block_height = self.last_block_height + 1;
 
@@ -127,15 +128,26 @@ impl Engine {
         self.last_block_height = proposed_block_height;
         // drive the app through the event loop
         self.begin_block(proposed_block_height)?;
-        //TODO: handle contribution/deliver tx
-        // self.reconstruct_and_deliver_txs(certificate)?;
+        // handle contribution/deliver tx
+        self.aggregate_contribution_and_deliver_txs(contribution)?;
         self.end_block(proposed_block_height)?;
         self.commit()?;
         Ok(())
     }
 
-    
+    // 
+    fn aggregate_contribution_and_deliver_txs() -> eyre::Result<()>{
 
+    }
+
+    fn aggregation_contribution() -> eyre::Result<()>{
+
+    }
+
+
+    fn deliver_contribution() -> eyre::Result<()>{
+
+    }
 
 }
 
@@ -199,4 +211,12 @@ impl Engine {
         self.client.commit()?;
         Ok(())
     }
+}
+
+
+pub type Transaction = Vec<u8>;
+pub type Contribution = Vec<Transaction>;
+#[derive(serde::Deserialize)]
+pub enum HBMessage<C: Contribution> {
+    HbContribution(C),
 }
