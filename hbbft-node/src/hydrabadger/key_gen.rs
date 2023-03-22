@@ -1,7 +1,7 @@
 //! Synchronous distributed key generation.
 
 use super::Error;
-use crate::hydrabadger::hydrabadger::hydrabadger;
+use crate::hydrabadger::hydrabadger::Hydrabadger;
 use crate::peer::Peers;
 use crate::{Contribution, NetworkState, NodeId, Uid, WireMessage};
 use crossbeam::queue::SegQueue;
@@ -237,7 +237,7 @@ impl<N: NodeId> Machine<N> {
     pub(super) fn add_peers<C: Contribution>(
         &mut self,
         peers: &Peers<C, N>,
-        hdb: &hydrabadger<C, N>,
+        hdb: &Hydrabadger<C, N>,
         net_state: NetworkState<N>,
     ) -> Result<(), Error> {
         match self.state {

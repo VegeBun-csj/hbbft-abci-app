@@ -28,7 +28,7 @@ pub struct PeerHandler<C: Contribution, N: NodeId> {
     wire_msgs: WireMessages<C, N>,
 
     /// Handle to the shared message state.
-    hdb: hydrabadger<C, N>,
+    hdb: Hydrabadger<C, N>,
 
     // TODO: Consider adding back a separate clone of `peer_internal_tx`. Is
     // there any difference if capacity isn't an issue? -- doubtful
@@ -43,7 +43,7 @@ impl<C: Contribution, N: NodeId> PeerHandler<C, N> {
     /// Create a new instance of `Peer`.
     pub fn new(
         pub_info: Option<(N, InAddr, PublicKey)>,
-        hdb: hydrabadger<C, N>,
+        hdb: Hydrabadger<C, N>,
         mut wire_msgs: WireMessages<C, N>,
     ) -> PeerHandler<C, N> {
         // Get the client socket address
@@ -74,7 +74,7 @@ impl<C: Contribution, N: NodeId> PeerHandler<C, N> {
         }
     }
 
-    pub(crate) fn hdb(&self) -> &hydrabadger<C, N> {
+    pub(crate) fn hdb(&self) -> &Hydrabadger<C, N> {
         &self.hdb
     }
 

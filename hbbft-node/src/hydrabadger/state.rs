@@ -1,4 +1,4 @@
-//! hydrabadger state.
+//! Hydrabadger state.
 //!
 //! FIXME: Reorganize `Handler` and `State` to more clearly separate concerns.
 //!

@@ -44,7 +44,7 @@ const DEFAULT_KEYGEN_PEER_COUNT: usize = 2;
 // debugging.
 const DEFAULT_OUTPUT_EXTRA_DELAY_MS: u64 = 0;
 
-/// hydrabadger configuration options.
+/// Hydrabadger configuration options.
 //
 // TODO: Convert to builder.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -77,7 +77,7 @@ impl Default for Config {
     }
 }
 
-/// The `Arc` wrapped portion of `hydrabadger`.
+/// The `Arc` wrapped portion of `Hydrabadger`.
 ///
 /// Shared all over the place.
 struct Inner<C: Contribution, N: NodeId> {
@@ -121,7 +121,7 @@ pub struct Hydrabadger<C: Contribution, N: NodeId> {
 }
 
 impl<C: Contribution, N: NodeId + DeserializeOwned + 'static> Hydrabadger<C, N> {
-    /// Returns a new hydrabadger node.
+    /// Returns a new Hydrabadger node.
     pub fn new(addr: SocketAddr, cfg: Config, nid: N) -> Self {
         let secret_key = SecretKey::random();
 
@@ -129,7 +129,7 @@ impl<C: Contribution, N: NodeId + DeserializeOwned + 'static> Hydrabadger<C, N> 
         let (batch_tx, batch_rx) = mpsc::unbounded();
 
         info!("");
-        info!("Local hydrabadger Node: ");
+        info!("Local Hydrabadger Node: ");
         info!("    UID:             {:?}", nid);
         info!("    Socket Address:  {}", addr);
         info!("    Public Key:      {:?}", secret_key.public_key());
@@ -167,9 +167,9 @@ impl<C: Contribution, N: NodeId + DeserializeOwned + 'static> Hydrabadger<C, N> 
         hdb
     }
 
-    /// Returns a new hydrabadger node.
+    /// Returns a new Hydrabadger node.
     pub fn with_defaults(addr: SocketAddr, nid: N) -> Self {
-        hydrabadger::new(addr, Config::default(), nid)
+        Hydrabadger::new(addr, Config::default(), nid)
     }
 
     /// Returns the pre-created handler.
@@ -236,7 +236,7 @@ impl<C: Contribution, N: NodeId + DeserializeOwned + 'static> Hydrabadger<C, N> 
     ///
     /// The current epoch will be sent upon registration. If a listener is
     /// registered before any batches have been output by this instance of
-    /// hydrabadger, the start epoch will be output.
+    /// Hydrabadger, the start epoch will be output.
     pub fn register_epoch_listener(&self) -> EpochRx {
         let (tx, rx) = mpsc::unbounded();
         if self.is_validator() {
@@ -478,7 +478,7 @@ impl<C: Contribution, N: NodeId + DeserializeOwned + 'static> Hydrabadger<C, N> 
             // Log state:
             let dsct = hdb.state_dsct_stale();
             let peer_count = peers.count_total();
-            info!("hydrabadger State: {:?}({})", dsct, peer_count);
+            info!("Hydrabadger State: {:?}({})", dsct, peer_count);
 
             // Log peer list:
             let peer_list = peers
