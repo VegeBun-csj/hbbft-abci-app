@@ -1,4 +1,4 @@
-//! hydrabadger event handler.
+//! Hydrabadger event handler.
 //!
 //! FIXME: Reorganize `Handler` and `State` to more clearly separate concerns.
 //!     * Do not make state changes directly in this module (use closures, etc.).
@@ -21,7 +21,7 @@ use hbbft::{
 use std::{cell::RefCell, collections::HashMap};
 use tokio::{self, prelude::*};
 
-/// hydrabadger event (internal message) handler.
+/// Hydrabadger event (internal message) handler.
 pub struct Handler<C: Contribution, N: NodeId> {
     hdb: Hydrabadger<C, N>,
     // TODO: Use a bounded tx/rx (find a sensible upper bound):
@@ -40,7 +40,7 @@ pub struct Handler<C: Contribution, N: NodeId> {
 
 impl<C: Contribution, N: NodeId> Handler<C, N> {
     pub(super) fn new(
-        hdb: hydrabadger<C, N>,
+        hdb: Hydrabadger<C, N>,
         peer_internal_rx: InternalRx<C, N>,
         batch_tx: BatchTx<C, N>,
     ) -> Handler<C, N> {
@@ -639,7 +639,7 @@ impl<C: Contribution, N: NodeId> Future for Handler<C, N> {
                     return Ok(Async::Ready(()));
                 }
                 Ok(Async::NotReady) => {}
-                Err(()) => return Err(Error::hydrabadgerHandlerPoll),
+                Err(()) => return Err(Error::HydrabadgerHandlerPoll),
             };
         }
 

@@ -90,7 +90,7 @@ use tokio::{
 use uuid::Uuid;
 
 pub use crate::blockchain::{Blockchain, MiningError};
-pub use crate::hydrabadger::{Config, hydrabadger, hydrabadgerWeak};
+pub use crate::hydrabadger::{Config, Hydrabadger, HydrabadgerWeak};
 // TODO: Create a separate, library-wide error type.
 pub use crate::hydrabadger::key_gen;
 pub use crate::hydrabadger::Error;

@@ -114,13 +114,13 @@ struct Inner<C: Contribution, N: NodeId> {
 
 /// A `HoneyBadger` network node.
 #[derive(Clone)]
-pub struct hydrabadger<C: Contribution, N: NodeId> {
+pub struct Hydrabadger<C: Contribution, N: NodeId> {
     inner: Arc<Inner<C, N>>,
     handler: Arc<Mutex<Option<Handler<C, N>>>>,
     batch_rx: Arc<Mutex<Option<BatchRx<C, N>>>>,
 }
 
-impl<C: Contribution, N: NodeId + DeserializeOwned + 'static> hydrabadger<C, N> {
+impl<C: Contribution, N: NodeId + DeserializeOwned + 'static> Hydrabadger<C, N> {
     /// Returns a new hydrabadger node.
     pub fn new(addr: SocketAddr, cfg: Config, nid: N) -> Self {
         let secret_key = SecretKey::random();
@@ -156,7 +156,7 @@ impl<C: Contribution, N: NodeId + DeserializeOwned + 'static> hydrabadger<C, N> 
             epoch_listeners: RwLock::new(Vec::new()),
         });
 
-        let hdb = hydrabadger {
+        let hdb = Hydrabadger {
             inner,
             handler: Arc::new(Mutex::new(None)),
             batch_rx: Arc::new(Mutex::new(Some(batch_rx))),
@@ -571,8 +571,8 @@ impl<C: Contribution, N: NodeId + DeserializeOwned + 'static> hydrabadger<C, N> 
         &self.inner.secret_key
     }
 
-    pub fn to_weak(&self) -> hydrabadgerWeak<C, N> {
-        hydrabadgerWeak {
+    pub fn to_weak(&self) -> HydrabadgerWeak<C, N> {
+        HydrabadgerWeak {
             inner: Arc::downgrade(&self.inner),
             handler: Arc::downgrade(&self.handler),
             batch_rx: Arc::downgrade(&self.batch_rx),
@@ -580,18 +580,18 @@ impl<C: Contribution, N: NodeId + DeserializeOwned + 'static> hydrabadger<C, N> 
     }
 }
 
-pub struct hydrabadgerWeak<C: Contribution, N: NodeId> {
+pub struct HydrabadgerWeak<C: Contribution, N: NodeId> {
     inner: Weak<Inner<C, N>>,
     handler: Weak<Mutex<Option<Handler<C, N>>>>,
     batch_rx: Weak<Mutex<Option<BatchRx<C, N>>>>,
 }
 
-impl<C: Contribution, N: NodeId> hydrabadgerWeak<C, N> {
-    pub fn upgrade(self) -> Option<hydrabadger<C, N>> {
+impl<C: Contribution, N: NodeId> HydrabadgerWeak<C, N> {
+    pub fn upgrade(self) -> Option<Hydrabadger<C, N>> {
         self.inner.upgrade().and_then(|inner| {
             self.handler.upgrade().and_then(|handler| {
                 self.batch_rx.upgrade().and_then(|batch_rx| {
-                    Some(hydrabadger {
+                    Some(Hydrabadger {
                         inner,
                         handler,
                         batch_rx,
