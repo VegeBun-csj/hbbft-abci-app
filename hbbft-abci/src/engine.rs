@@ -143,7 +143,6 @@ impl Engine {
 
     fn aggregation_contribution(&mut self) -> eyre::Result<()>{
         Ok(())
-
     }
 
 

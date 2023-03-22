@@ -53,10 +53,13 @@ byteorder = "1"
 parking_lot = "0.6"
 clear_on_drop = "0.2"
 
+# ABCI lib
+hbbft-abci = { path = "../hbbft-abci", version = "0.1.0"}
+tendermint-abci = { version = "0.23.7", features = ["client"] }
+tendermint-proto = "0.23.7"
+
 [dependencies.hbbft]
 version = "0.1.0"
-# git = "https://github.com/poanetwork/hbbft.git"
-# branch = "master"
 
 [profile.release]
 debug = true

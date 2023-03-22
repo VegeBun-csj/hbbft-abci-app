@@ -32,6 +32,18 @@ use tokio::{
 
 use crate::Blockchain;
 
+
+// import ABCI lib
+use tendermint_abci::{Client as AbciClient, ClientBuilder};
+use tendermint_proto::abci::{
+    RequestBeginBlock, RequestDeliverTx, RequestEndBlock, RequestInfo, RequestInitChain,
+    RequestQuery, ResponseQuery,
+};
+use tendermint_proto::types::Header;
+
+// hbbft abci
+use hbbft_abci::Engine;
+
 // The number of random transactions to generate per interval.
 const DEFAULT_TXN_GEN_COUNT: usize = 5;
 // The interval between randomly generated transactions.
@@ -509,6 +521,7 @@ impl<C: Contribution, N: NodeId + DeserializeOwned + 'static> Hydrabadger<C, N> 
         self,
         remotes: Option<HashSet<SocketAddr>>,
         gen_txns: Option<fn(usize, usize) -> C>,
+        hbbft_engine: Option<Engine>,
     ) -> impl Future<Item = (), Error = ()> {
         let socket = TcpListener::bind(&self.inner.addr).unwrap();
         info!("Listening on: {}", self.inner.addr);
@@ -545,6 +558,23 @@ impl<C: Contribution, N: NodeId + DeserializeOwned + 'static> Hydrabadger<C, N> 
         let log_status = self.clone().log_status();
         let generate_contributions = self.clone().generate_contributions(gen_txns);
 
+        //
+        // 本地节点获取到contribution之后，需要进行HBBFT共识，总体分为三步：
+        //
+        // 1. RBC传输
+        // 2. ABA共识
+        // 3. 输出最终的Subset
+        // 
+        
+        
+        
+        //
+        // 1. HBBFT共识之后，将所有应该提交的contribution组合起来得到block
+        // 2. 调用实现了ABCI的HBBFT Engine来处理这个block中的所有的交易，即进行begin block, deliver tx, end block, commit这几个操作
+        //
+
+        
+
         listen
             .join5(connect, hdb_handler, log_status, generate_contributions)
             .map(|(..)| ())
@@ -555,8 +585,9 @@ impl<C: Contribution, N: NodeId + DeserializeOwned + 'static> Hydrabadger<C, N> 
         self,
         remotes: Option<HashSet<SocketAddr>>,
         gen_txns: Option<fn(usize, usize) -> C>,
+        hbbft_engine: Option<Engine>,
     ) {
-        tokio::run(self.node(remotes, gen_txns));
+        tokio::run(self.node(remotes, gen_txns, hbbft_engine));
     }
 
     pub fn addr(&self) -> &InAddr {
