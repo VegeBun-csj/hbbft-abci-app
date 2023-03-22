@@ -18,8 +18,9 @@ use hbbft::broadcast::{Broadcast, Message};
 use hbbft::{
     crypto::{PublicKey, SecretKey},
     sync_key_gen::{Ack, AckOutcome, Part, PartOutcome, SyncKeyGen},
-    Contribution
 };
+
+pub type Transaction = Vec<u8>;
 
 /// The engine drives the ABCI Application by concurrently polling for:
 /// 1. Calling the BeginBlock -> DeliverTx -> EndBlock -> Commit event loop on the ABCI App on each Bullshark
@@ -68,7 +69,7 @@ impl Engine {
     }
 
     /// Receives an ordered list of certificates and apply any application-specific logic.
-    pub async fn run(&mut self, mut rx_output: Receiver<HBMessage<Contribution>>) -> eyre::Result<()> {
+    pub async fn run(&mut self, mut rx_output: Receiver<Transaction>) -> eyre::Result<()> {
         self.init_chain()?;
 
         loop {
@@ -118,7 +119,7 @@ impl Engine {
 
     /// On each new contribution, increment the block height to proposed and run with
     /// BeginBlock -> DeliverTx each tx in the contribution -> EndBlock -> Commit event loop.
-    fn handle_contribution(&mut self, contribution: HBMessage<Contribution>) -> eyre::Result<()> {
+    fn handle_contribution(&mut self, contribution: Transaction) -> eyre::Result<()> {
         // increment block
         let proposed_block_height = self.last_block_height + 1;
 
@@ -128,25 +129,26 @@ impl Engine {
         self.last_block_height = proposed_block_height;
         // drive the app through the event loop
         self.begin_block(proposed_block_height)?;
-        // handle contribution/deliver tx
-        self.aggregate_contribution_and_deliver_txs(contribution)?;
+        //TODO: handle contribution/deliver tx
+        self.aggregate_contribution_and_deliver_txs();
         self.end_block(proposed_block_height)?;
         self.commit()?;
         Ok(())
     }
 
     // 
-    fn aggregate_contribution_and_deliver_txs() -> eyre::Result<()>{
-
+    fn aggregate_contribution_and_deliver_txs(&mut self) -> eyre::Result<()>{
+        Ok(())
     }
 
-    fn aggregation_contribution() -> eyre::Result<()>{
+    fn aggregation_contribution(&mut self) -> eyre::Result<()>{
+        Ok(())
 
     }
 
 
     fn deliver_contribution() -> eyre::Result<()>{
-
+        Ok(())
     }
 
 }
@@ -214,9 +216,8 @@ impl Engine {
 }
 
 
-pub type Transaction = Vec<u8>;
-pub type Contribution = Vec<Transaction>;
+/* pub type Subset = Vec<Transaction>;
 #[derive(serde::Deserialize)]
 pub enum HBMessage<C: Contribution> {
     HbContribution(C),
-}
+} */

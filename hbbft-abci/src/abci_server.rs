@@ -53,7 +53,7 @@ impl AbciApi<ResponseQuery> {
                     .await
                     .wrap_err(format!(
                         "ROUTE_BROADCAST_TX failed to connect to {}",
-                        self.mempool_address
+                        self.bind_address
                     ))
                     .unwrap();
                 let mut transport = Framed::new(stream, LengthDelimitedCodec::new());
