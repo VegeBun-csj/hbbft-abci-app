@@ -2,7 +2,7 @@
 
 #![allow(unused_imports, dead_code, unused_variables, unused_mut)]
 
-use crate::hydrabadger::{Error, hydrabadger};
+use crate::hydrabadger::{Error, Hydrabadger};
 use crate::{
     Contribution, InAddr, InternalMessage, NodeId, OutAddr, Uid, WireMessage, WireMessageKind,
     WireMessages, WireRx, WireTx,

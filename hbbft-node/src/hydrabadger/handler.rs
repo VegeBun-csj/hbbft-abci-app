@@ -5,7 +5,7 @@
 //!
 
 use super::WIRE_MESSAGE_RETRY_MAX;
-use super::{Error, hydrabadger, InputOrMessage, State, StateDsct, StateMachine};
+use super::{Error, Hydrabadger, InputOrMessage, State, StateDsct, StateMachine};
 use crate::peer::Peers;
 use crate::{
     key_gen, BatchTx, Contribution, InAddr, InternalMessage, InternalMessageKind, InternalRx,
@@ -23,7 +23,7 @@ use tokio::{self, prelude::*};
 
 /// hydrabadger event (internal message) handler.
 pub struct Handler<C: Contribution, N: NodeId> {
-    hdb: hydrabadger<C, N>,
+    hdb: Hydrabadger<C, N>,
     // TODO: Use a bounded tx/rx (find a sensible upper bound):
     peer_internal_rx: InternalRx<C, N>,
     /// Outgoing wire message queue.
