@@ -18,7 +18,7 @@ use std::io::Write;
 use std::net::{SocketAddr, ToSocketAddrs};
 
 use tokio::sync::mpsc::{channel, Receiver};
-use hbbft_abci::Engine;
+use hbbft_abci::{AbciApi, Engine};
 
 /// The default channel capacity.
 pub const CHANNEL_CAPACITY: usize = 1_000;
@@ -185,10 +185,10 @@ fn main() {
     let app_address = String::from("127.0.0.1:26668").parse::<SocketAddr>().unwrap();
     let store_path = "./dara";
 
-    let (tx_abci_queries, rx_abci_queries) = channel(CHANNEL_CAPACITY);
+    // let (tx_abci_queries, rx_abci_queries) = channel(CHANNEL_CAPACITY);
 
-    let mut hbbft_engine = Engine::new(app_address, store_path, rx_abci_queries);
+    // let mut hbbft_engine = Engine::new(app_address, store_path, rx_abci_queries);
 
-    hb.run_node(Some(remote_addresses), Some(gen_txn), Some(hbbft_engine));
+    hb.run_node(Some(remote_addresses), Some(gen_txn));
 
 }

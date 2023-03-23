@@ -30,6 +30,9 @@ use tokio::{
     timer::{Delay, Interval},
 };
 
+// use tokio::sync::mpsc::{channel, Receiver};
+use hbbft_abci::{AbciApi, Engine};
+
 use crate::Blockchain;
 
 
@@ -55,6 +58,9 @@ const DEFAULT_KEYGEN_PEER_COUNT: usize = 2;
 // Causes the primary hydrabadger thread to sleep after every batch. Used for
 // debugging.
 const DEFAULT_OUTPUT_EXTRA_DELAY_MS: u64 = 0;
+
+/// The default channel capacity.
+pub const CHANNEL_CAPACITY: usize = 1_000;
 
 /// Hydrabadger configuration options.
 //
@@ -521,7 +527,7 @@ impl<C: Contribution, N: NodeId + DeserializeOwned + 'static> Hydrabadger<C, N> 
         self,
         remotes: Option<HashSet<SocketAddr>>,
         gen_txns: Option<fn(usize, usize) -> C>,
-        hbbft_engine: Option<Engine>,
+        // hbbft_engine: Option<Engine>,
     ) -> impl Future<Item = (), Error = ()> {
         let socket = TcpListener::bind(&self.inner.addr).unwrap();
         info!("Listening on: {}", self.inner.addr);
@@ -558,6 +564,10 @@ impl<C: Contribution, N: NodeId + DeserializeOwned + 'static> Hydrabadger<C, N> 
         let log_status = self.clone().log_status();
         let generate_contributions = self.clone().generate_contributions(gen_txns);
 
+        let (tx_abci_queries, rx_abci_queries) = channel(CHANNEL_CAPACITY);
+
+        let mut hbbft_engine = Engine::new(app_address, store_path, rx_abci_queries);
+
         //
         // 本地节点获取到contribution之后，需要进行HBBFT共识，总体分为三步：
         //
@@ -585,9 +595,9 @@ impl<C: Contribution, N: NodeId + DeserializeOwned + 'static> Hydrabadger<C, N> 
         self,
         remotes: Option<HashSet<SocketAddr>>,
         gen_txns: Option<fn(usize, usize) -> C>,
-        hbbft_engine: Option<Engine>,
+        // hbbft_engine: Option<Engine>,
     ) {
-        tokio::run(self.node(remotes, gen_txns, hbbft_engine));
+        tokio::run(self.node(remotes, gen_txns));
     }
 
     pub fn addr(&self) -> &InAddr {
