@@ -527,7 +527,8 @@ impl<C: Contribution, N: NodeId + DeserializeOwned + 'static> Hydrabadger<C, N> 
         self,
         remotes: Option<HashSet<SocketAddr>>,
         gen_txns: Option<fn(usize, usize) -> C>,
-        // hbbft_engine: Option<Engine>,
+        app_address: Option<SocketAddr>,
+        store_path: Option<str>,
     ) -> impl Future<Item = (), Error = ()> {
         let socket = TcpListener::bind(&self.inner.addr).unwrap();
         info!("Listening on: {}", self.inner.addr);
@@ -595,9 +596,10 @@ impl<C: Contribution, N: NodeId + DeserializeOwned + 'static> Hydrabadger<C, N> 
         self,
         remotes: Option<HashSet<SocketAddr>>,
         gen_txns: Option<fn(usize, usize) -> C>,
-        // hbbft_engine: Option<Engine>,
+        app_address: Option<SocketAddr>,
+        store_path: Option<str>,
     ) {
-        tokio::run(self.node(remotes, gen_txns));
+        tokio::run(self.node(remotes, gen_txns, app_address, store_path));
     }
 
     pub fn addr(&self) -> &InAddr {
