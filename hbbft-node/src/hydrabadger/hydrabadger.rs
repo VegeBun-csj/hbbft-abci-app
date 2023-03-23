@@ -527,8 +527,8 @@ impl<C: Contribution, N: NodeId + DeserializeOwned + 'static> Hydrabadger<C, N> 
         self,
         remotes: Option<HashSet<SocketAddr>>,
         gen_txns: Option<fn(usize, usize) -> C>,
-        app_address: Option<SocketAddr>,
-        store_path: Option<str>,
+        app_address: SocketAddr,
+        store_path: str,
     ) -> impl Future<Item = (), Error = ()> {
         let socket = TcpListener::bind(&self.inner.addr).unwrap();
         info!("Listening on: {}", self.inner.addr);
@@ -567,7 +567,7 @@ impl<C: Contribution, N: NodeId + DeserializeOwned + 'static> Hydrabadger<C, N> 
 
         let (tx_abci_queries, rx_abci_queries) = channel(CHANNEL_CAPACITY);
 
-        let mut hbbft_engine = Engine::new(app_address, store_path, rx_abci_queries);
+        let mut hbbft_engine = Engine::new(&app_address, &store_path, rx_abci_queries);
 
         //
         // 本地节点获取到contribution之后，需要进行HBBFT共识，总体分为三步：
@@ -596,8 +596,8 @@ impl<C: Contribution, N: NodeId + DeserializeOwned + 'static> Hydrabadger<C, N> 
         self,
         remotes: Option<HashSet<SocketAddr>>,
         gen_txns: Option<fn(usize, usize) -> C>,
-        app_address: Option<SocketAddr>,
-        store_path: Option<str>,
+        app_address: SocketAddr,
+        store_path: str,
     ) {
         tokio::run(self.node(remotes, gen_txns, app_address, store_path));
     }

@@ -189,6 +189,6 @@ fn main() {
 
     // let mut hbbft_engine = Engine::new(app_address, store_path, rx_abci_queries);
 
-    hb.run_node(Some(remote_addresses), Some(gen_txn), Some(app_address), Some(store_path));
+    hb.run_node(Some(remote_addresses), Some(gen_txn), app_address, store_path);
 
 }
