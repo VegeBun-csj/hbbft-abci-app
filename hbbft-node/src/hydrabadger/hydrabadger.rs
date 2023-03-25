@@ -10,6 +10,7 @@ use crate::{
 use futures::{
     future::{self, Either},
     sync::mpsc,
+    Future
 };
 use hbbft::crypto::{PublicKey, SecretKey};
 use parking_lot::{Mutex, RwLock, RwLockReadGuard, RwLockWriteGuard};
@@ -571,10 +572,9 @@ impl<C: Contribution, N: NodeId + DeserializeOwned + 'static> Hydrabadger<C, N> 
 
         let (tx_abci_queries, rx_abci_queries) = channel(CHANNEL_CAPACITY);
 
-        // let api = AbciApi::new(mempool_address, tx_abci_queries);
 
         tokio::spawn(async move {
-            let api = AbciApi::new(mempool_address, tx_abci_queries);
+            let api = AbciApi::new(&self.inner.addr.0, tx_abci_queries);
             // let tx_abci_queries = tx_abci_queries.clone();
             // Spawn the ABCI RPC endpoint
             let mut address = String::from("127.0.0.1:26657").parse::<SocketAddr>().unwrap();

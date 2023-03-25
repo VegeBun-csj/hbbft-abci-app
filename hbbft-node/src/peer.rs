@@ -18,6 +18,7 @@ use std::{
     },
 };
 // use tokio::prelude::*;
+use futures::{ Poll, Async, Future, task};
 
 /// The state for each connected client.
 pub struct PeerHandler<C: Contribution, N: NodeId> {

@@ -90,6 +90,7 @@ use tokio::{
 };
 
 use tokio_util::codec::{Framed, LengthDelimitedCodec};
+use futures::{ Poll, Async, Future, task, Stream, Sink};
 
 use uuid::Uuid;
 
