@@ -1146,6 +1146,7 @@ dependencies = [
  "tokio-serde-bincode",
  "tokio-util 0.6.10",
  "uuid",
+ "warp",
 ]
 
 [[package]]

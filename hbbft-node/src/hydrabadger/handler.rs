@@ -21,6 +21,7 @@ use hbbft::{
 use std::{cell::RefCell, collections::HashMap};
 // use tokio::{self, prelude::*};
 use tokio::*;
+use futures::{ Poll, Async, Future, task};
 
 /// Hydrabadger event (internal message) handler.
 pub struct Handler<C: Contribution, N: NodeId> {
