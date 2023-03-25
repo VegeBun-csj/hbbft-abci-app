@@ -113,6 +113,7 @@ impl Transaction {
     }
 }
 
+#[tokio::main]
 fn main() {
     env_logger::Builder::new()
         .format(|buf, record| {

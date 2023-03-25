@@ -34,8 +34,9 @@ extern crate byteorder;
 extern crate bytes;
 extern crate rand;
 extern crate tokio;
-extern crate tokio_codec;
-extern crate tokio_io;
+/* extern crate tokio_codec;
+extern crate tokio_io; */
+extern crate tokio_util;
 extern crate uuid;
 #[macro_use]
 extern crate serde_derive;
@@ -82,11 +83,14 @@ use std::{
     ops::Deref,
 };
 use tokio::{
-    codec::{Framed, LengthDelimitedCodec},
+    // codec::{Framed, LengthDelimitedCodec},
     io,
     net::TcpStream,
-    prelude::*,
+    // prelude::*,
 };
+
+use tokio_util::codec::{Framed, LengthDelimitedCodec};
+
 use uuid::Uuid;
 
 pub use crate::blockchain::{Blockchain, MiningError};

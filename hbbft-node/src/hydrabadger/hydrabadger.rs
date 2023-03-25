@@ -26,12 +26,14 @@ use std::{
 use tokio::{
     self,
     net::{TcpListener, TcpStream},
-    prelude::*,
-    timer::{Delay, Interval},
+    // prelude::*,
+    // timer::{Delay, Interval},
+    time,
 };
 
-// use tokio::sync::mpsc::{channel, Receiver};
-use hbbft_abci::{AbciApi, Engine};
+use tokio::sync::mpsc::{channel, Receiver};
+use tokio::sync::oneshot::Sender as OneShotSender;
+use hbbft_abci::{AbciApi, Engine, AbciQueryQuery};
 
 use crate::Blockchain;
 
@@ -437,7 +439,8 @@ impl<C: Contribution, N: NodeId + DeserializeOwned + 'static> Hydrabadger<C, N> 
             let gen_delay = self.inner.config.txn_gen_interval;
             let gen_cntrb = epoch_stream
                 .and_then(move |epoch_no| {
-                    Delay::new(Instant::now() + Duration::from_millis(gen_delay))
+                    // Delay::new(Instant::now() + Duration::from_millis(gen_delay))
+                        time::sleep(Duration::from_millis(gen_delay))
                         .map_err(|err| panic!("Timer error: {:?}", err))
                         .and_then(move |_| Ok(epoch_no))
                 })
@@ -485,10 +488,11 @@ impl<C: Contribution, N: NodeId + DeserializeOwned + 'static> Hydrabadger<C, N> 
     /// Returns a future that generates random transactions and logs status
     /// messages.
     fn log_status(self) -> impl Future<Item = (), Error = ()> {
-        Interval::new(
+        /* Interval::new(
             Instant::now(),
             Duration::from_millis(self.inner.config.txn_gen_interval),
-        )
+        ) */
+        time::interval(Duration::from_millis(self.inner.config.txn_gen))
         .for_each(move |_| {
             let hdb = self.clone();
             let peers = hdb.peers();
@@ -528,7 +532,7 @@ impl<C: Contribution, N: NodeId + DeserializeOwned + 'static> Hydrabadger<C, N> 
         remotes: Option<HashSet<SocketAddr>>,
         gen_txns: Option<fn(usize, usize) -> C>,
         app_address: SocketAddr,
-        store_path: str,
+        store_path: &str,
     ) -> impl Future<Item = (), Error = ()> {
         let socket = TcpListener::bind(&self.inner.addr).unwrap();
         info!("Listening on: {}", self.inner.addr);
@@ -567,7 +571,19 @@ impl<C: Contribution, N: NodeId + DeserializeOwned + 'static> Hydrabadger<C, N> 
 
         let (tx_abci_queries, rx_abci_queries) = channel(CHANNEL_CAPACITY);
 
-        let mut hbbft_engine = Engine::new(&app_address, &store_path, rx_abci_queries);
+        // let api = AbciApi::new(mempool_address, tx_abci_queries);
+
+        tokio::spawn(async move {
+            let api = AbciApi::new(mempool_address, tx_abci_queries);
+            // let tx_abci_queries = tx_abci_queries.clone();
+            // Spawn the ABCI RPC endpoint
+            let mut address = String::from("127.0.0.1:26657").parse::<SocketAddr>().unwrap();
+            address.set_ip("0.0.0.0".parse().unwrap());
+            warp::serve(api.routes()).run(address).await
+        });
+
+
+        let mut hbbft_engine = Engine::new(app_address, store_path, rx_abci_queries);
 
         //
         // 本地节点获取到contribution之后，需要进行HBBFT共识，总体分为三步：
@@ -597,9 +613,9 @@ impl<C: Contribution, N: NodeId + DeserializeOwned + 'static> Hydrabadger<C, N> 
         remotes: Option<HashSet<SocketAddr>>,
         gen_txns: Option<fn(usize, usize) -> C>,
         app_address: SocketAddr,
-        store_path: str,
+        store_path: &str,
     ) {
-        tokio::run(self.node(remotes, gen_txns, app_address, store_path));
+        self.node(remotes, gen_txns, app_address, store_path);
     }
 
     pub fn addr(&self) -> &InAddr {

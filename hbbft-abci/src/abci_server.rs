@@ -7,6 +7,7 @@ use tokio::sync::mpsc::Sender;
 use tokio::sync::oneshot::{channel as oneshot_channel, Sender as OneShotSender};
 
 use tokio::net::TcpStream;
+// use tokio::codec::{Framed, length_delimited::LengthDelimitedCodec};
 use tokio_util::codec::{Framed, LengthDelimitedCodec};
 use warp::{Filter, Rejection};
 
@@ -49,7 +50,7 @@ impl AbciApi<ResponseQuery> {
                 log::warn!("broadcast_tx: {:?}", req);
 
                 // 根据这个地址创建一个连接
-                let stream = TcpStream::connect(self.bind_address)
+                let stream = TcpStream::connect(&self.bind_address)
                     .await
                     .wrap_err(format!(
                         "ROUTE_BROADCAST_TX failed to connect to {}",
