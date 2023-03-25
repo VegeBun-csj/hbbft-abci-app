@@ -91,7 +91,7 @@ use tokio::{
 
 use tokio_util::codec::{Framed, LengthDelimitedCodec};
 use futures::{ Poll, Async, Future, task, Stream, Sink};
-
+use futures_util::sink::SinkExt;
 use uuid::Uuid;
 
 pub use crate::blockchain::{Blockchain, MiningError};
@@ -439,7 +439,7 @@ impl<C: Contribution, N: NodeId + Serialize> Sink for WireMessages<C, N> {
             Ok(s) => serialized.extend_from_slice(&s),
             Err(err) => return Err(Error::Io(io::Error::new(io::ErrorKind::Other, err))),
         }
-        match self.framed.start_send(serialized.freeze()) {
+        match Pin::new(&mut self.framed).start_send(serialized.freeze()) {
             Ok(async_sink) => match async_sink {
                 AsyncSink::Ready => Ok(AsyncSink::Ready),
                 AsyncSink::NotReady(_) => Ok(AsyncSink::NotReady(item)),

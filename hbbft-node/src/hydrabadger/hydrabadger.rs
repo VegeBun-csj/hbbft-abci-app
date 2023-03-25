@@ -10,7 +10,8 @@ use crate::{
 use futures::{
     future::{self, Either},
     sync::mpsc,
-    Future
+    Future,
+    Stream,
 };
 use hbbft::crypto::{PublicKey, SecretKey};
 use parking_lot::{Mutex, RwLock, RwLockReadGuard, RwLockWriteGuard};
@@ -34,7 +35,6 @@ use tokio::{
 
 use tokio::sync::mpsc::{channel, Receiver};
 use tokio::sync::oneshot::Sender as OneShotSender;
-use hbbft_abci::{AbciApi, Engine, AbciQueryQuery};
 
 use crate::Blockchain;
 
@@ -48,7 +48,7 @@ use tendermint_proto::abci::{
 use tendermint_proto::types::Header;
 
 // hbbft abci
-use hbbft_abci::Engine;
+use hbbft_abci::{AbciApi, Engine, AbciQueryQuery};
 
 // The number of random transactions to generate per interval.
 const DEFAULT_TXN_GEN_COUNT: usize = 5;
@@ -397,7 +397,7 @@ impl<C: Contribution, N: NodeId + DeserializeOwned + 'static> Hydrabadger<C, N> 
         info!("Initiating outgoing connection to: {}", remote_addr);
 
         TcpStream::connect(&remote_addr)
-            .map_err(Error::from)
+            .await.map_err(Error::from)
             .and_then(move |socket| {
                 let local_pk = local_sk.public_key();
                 // Wrap the socket with the frame delimiter and codec:
@@ -535,7 +535,7 @@ impl<C: Contribution, N: NodeId + DeserializeOwned + 'static> Hydrabadger<C, N> 
         app_address: SocketAddr,
         store_path: &str,
     ) -> impl Future<Item = (), Error = ()> {
-        let socket = TcpListener::bind(&self.inner.addr).unwrap();
+        let socket = TcpListener::bind(&*self.inner.addr).await.unwrap();
         info!("Listening on: {}", self.inner.addr);
 
         let remotes = remotes.unwrap_or_default();
@@ -545,7 +545,9 @@ impl<C: Contribution, N: NodeId + DeserializeOwned + 'static> Hydrabadger<C, N> 
             .incoming()
             .map_err(|err| error!("Error accepting socket: {:?}", err))
             .for_each(move |socket| {
-                tokio::spawn(hdb.clone().handle_incoming(socket));
+                tokio::spawn(async move {
+                    hdb.clone().handle_incoming(socket).await?
+                });
                 Ok(())
             });
 
@@ -553,12 +555,14 @@ impl<C: Contribution, N: NodeId + DeserializeOwned + 'static> Hydrabadger<C, N> 
         let local_sk = hdb.inner.secret_key.clone();
         let connect = future::lazy(move || {
             for &remote_addr in remotes.iter().filter(|&&ra| ra != hdb.inner.addr.0) {
-                tokio::spawn(hdb.clone().connect_outgoing(
-                    remote_addr,
-                    local_sk.clone(),
-                    None,
-                    true,
-                ));
+                tokio::spawn(async move {
+                    hdb.clone().connect_outgoing(
+                        remote_addr,
+                        local_sk.clone(),
+                        None,
+                        true,
+                    ).await?
+                });
             }
             Ok(())
         });
@@ -574,7 +578,7 @@ impl<C: Contribution, N: NodeId + DeserializeOwned + 'static> Hydrabadger<C, N> 
 
 
         tokio::spawn(async move {
-            let api = AbciApi::new(&self.inner.addr.0, tx_abci_queries);
+            let api = AbciApi::new(self.inner.addr.0, tx_abci_queries);
             // let tx_abci_queries = tx_abci_queries.clone();
             // Spawn the ABCI RPC endpoint
             let mut address = String::from("127.0.0.1:26657").parse::<SocketAddr>().unwrap();

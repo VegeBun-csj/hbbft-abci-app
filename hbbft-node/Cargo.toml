@@ -41,7 +41,7 @@ serde_bytes = "~0.10.4"
 serde_derive = "1"
 signifix = "0.9"
 futures = "0.1.31"
-
+futures-util = "0.3.11"
 # tokio = "~0.1.13"
 # tokio-codec = "~0.1.1"
 # tokio-io = "~0.1.9"

@@ -21,7 +21,7 @@ use hbbft::{
 use std::{cell::RefCell, collections::HashMap};
 // use tokio::{self, prelude::*};
 use tokio::*;
-use futures::{ Poll, Async, Future, task};
+use futures::{ Poll, Async, Future, task, Stream};
 
 /// Hydrabadger event (internal message) handler.
 pub struct Handler<C: Contribution, N: NodeId> {
@@ -385,12 +385,14 @@ impl<C: Contribution, N: NodeId> Handler<C, N> {
                 && peers.get(&OutAddr(peer_info.in_addr.0)).is_none()
             {
                 let local_sk = self.hdb.secret_key().clone();
-                tokio::spawn(self.hdb.clone().connect_outgoing(
-                    peer_info.in_addr.0,
-                    local_sk,
-                    Some((peer_info.nid.clone(), peer_info.in_addr, peer_info.pk)),
-                    false,
-                ));
+                tokio::spawn(async move {
+                    self.hdb.clone().connect_outgoing(
+                        peer_info.in_addr.0,
+                        local_sk,
+                        Some((peer_info.nid.clone(), peer_info.in_addr, peer_info.pk)),
+                        false,
+                    )
+                });
             }
         }
         Ok(())

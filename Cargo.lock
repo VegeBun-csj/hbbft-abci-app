@@ -1125,6 +1125,7 @@ dependencies = [
  "env_logger 0.5.13",
  "failure",
  "futures 0.1.31",
+ "futures-util",
  "hbbft 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "hbbft-abci",
  "itertools",
