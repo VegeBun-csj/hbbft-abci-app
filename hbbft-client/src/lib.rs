@@ -93,6 +93,7 @@ use tokio_util::codec::{Framed, LengthDelimitedCodec};
 use futures::{ Poll, Async, Future, task, Stream, Sink};
 use futures_util::sink::SinkExt;
 use uuid::Uuid;
+use core::pin::Pin;
 
 pub use crate::blockchain::{Blockchain, MiningError};
 pub use crate::hydrabadger::{Config, Hydrabadger, HydrabadgerWeak};

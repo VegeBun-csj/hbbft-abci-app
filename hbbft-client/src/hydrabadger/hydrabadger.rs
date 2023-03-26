@@ -384,7 +384,7 @@ impl<C: Contribution, N: NodeId + DeserializeOwned + 'static> Hydrabadger<C, N> 
     }
 
     /// Returns a future that connects to new peer.
-    pub(super) fn connect_outgoing(
+    pub(super) async fn connect_outgoing(
         self,
         remote_addr: SocketAddr,
         local_sk: SecretKey,
@@ -397,7 +397,8 @@ impl<C: Contribution, N: NodeId + DeserializeOwned + 'static> Hydrabadger<C, N> 
         info!("Initiating outgoing connection to: {}", remote_addr);
 
         TcpStream::connect(&remote_addr)
-            .await.map_err(Error::from)
+            .await
+            .map_err(Error::from)
             .and_then(move |socket| {
                 let local_pk = local_sk.public_key();
                 // Wrap the socket with the frame delimiter and codec:
@@ -413,7 +414,7 @@ impl<C: Contribution, N: NodeId + DeserializeOwned + 'static> Hydrabadger<C, N> 
                             *peer.out_addr(),
                         ));
 
-                        Either::A(peer)
+                        Ok(Either::A(peer))
                     }
                     Err(err) => Either::B(future::err(err)),
                 }
@@ -441,9 +442,10 @@ impl<C: Contribution, N: NodeId + DeserializeOwned + 'static> Hydrabadger<C, N> 
             let gen_cntrb = epoch_stream
                 .and_then(move |epoch_no| {
                     // Delay::new(Instant::now() + Duration::from_millis(gen_delay))
-                        time::sleep(Duration::from_millis(gen_delay))
-                        .map_err(|err| panic!("Timer error: {:?}", err))
-                        .and_then(move |_| Ok(epoch_no))
+                        time::sleep(Duration::from_millis(gen_delay));
+/*                         .map_err(|err| panic!("Timer error: {:?}", err))
+                        .and_then(move |_| Ok(epoch_no)) */
+                        Ok(epoch_no)
                 })
                 .for_each(move |_epoch_no| {
                     let hdb = self.clone();
@@ -488,13 +490,14 @@ impl<C: Contribution, N: NodeId + DeserializeOwned + 'static> Hydrabadger<C, N> 
 
     /// Returns a future that generates random transactions and logs status
     /// messages.
-    fn log_status(self) -> impl Future<Item = (), Error = ()> {
+    async fn log_status(self) -> impl Future<Item = (), Error = ()> {
         /* Interval::new(
             Instant::now(),
             Duration::from_millis(self.inner.config.txn_gen_interval),
         ) */
-        time::interval(Duration::from_millis(self.inner.config.txn_gen))
-        .for_each(move |_| {
+        time::interval(Duration::from_millis(self.inner.config.txn_gen_interval))
+        // .for_each(move |_| {
+        .tick().await(move |_| {
             let hdb = self.clone();
             let peers = hdb.peers();
 
@@ -528,7 +531,7 @@ impl<C: Contribution, N: NodeId + DeserializeOwned + 'static> Hydrabadger<C, N> 
     }
 
     /// Binds to a host address and returns a future which starts the node.
-    pub fn node(
+    pub async fn node(
         self,
         remotes: Option<HashSet<SocketAddr>>,
         gen_txns: Option<fn(usize, usize) -> C>,
@@ -542,7 +545,8 @@ impl<C: Contribution, N: NodeId + DeserializeOwned + 'static> Hydrabadger<C, N> 
 
         let hdb = self.clone();
         let listen = socket
-            .incoming()
+            .accept()
+            .await
             .map_err(|err| error!("Error accepting socket: {:?}", err))
             .for_each(move |socket| {
                 tokio::spawn(async move {

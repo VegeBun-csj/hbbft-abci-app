@@ -64,6 +64,8 @@ hbbft-abci = { path = "../hbbft-abci", version = "0.1.0"}
 tendermint-abci = { version = "0.23.7", features = ["client"] }
 tendermint-proto = "0.23.7"
 
+hbbft-blockchain = { path = "../blockchain", version = "0.1.0"}
+
 [dependencies.hbbft]
 version = "0.1.0"
 

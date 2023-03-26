@@ -10,7 +10,8 @@ extern crate serde_derive;
 
 use chrono::Local;
 use clap::{App, Arg, ArgMatches};
-use hydrabadger::{Blockchain, Config, Hydrabadger, MiningError, Uid};
+use hydrabadger::{Config, Hydrabadger, Uid};
+use hbbft_blockchain::blockchain::{Blockchain, MiningError};
 use rand::{distributions::Standard, Rng};
 use std::collections::HashSet;
 use std::env;

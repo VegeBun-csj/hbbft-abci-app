@@ -1,5 +1,2 @@
 [workspace]
-# members = ["node", "hbbft-abci", "evm-abci"]
-members = ["hbbft-abci", "hbbft-node"]
-# members = ["hbbft-abci"]
-
+members = ["hbbft-client", "hbbft-abci", "blockchain"]
