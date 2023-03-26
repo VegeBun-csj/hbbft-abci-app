@@ -55,8 +55,6 @@ use alloc_system::System;
 #[global_allocator]
 static A: System = System;
 
-// pub mod network;
-pub mod blockchain;
 pub mod hydrabadger;
 pub mod peer;
 
@@ -95,7 +93,6 @@ use futures_util::sink::SinkExt;
 use uuid::Uuid;
 use core::pin::Pin;
 
-pub use crate::blockchain::{Blockchain, MiningError};
 pub use crate::hydrabadger::{Config, Hydrabadger, HydrabadgerWeak};
 // TODO: Create a separate, library-wide error type.
 pub use crate::hydrabadger::key_gen;

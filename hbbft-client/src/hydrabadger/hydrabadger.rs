@@ -36,8 +36,6 @@ use tokio::{
 use tokio::sync::mpsc::{channel, Receiver};
 use tokio::sync::oneshot::Sender as OneShotSender;
 
-use crate::Blockchain;
-
 
 // import ABCI lib
 use tendermint_abci::{Client as AbciClient, ClientBuilder};
