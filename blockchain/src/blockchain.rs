@@ -8,6 +8,7 @@ use crypto::digest::Digest;
 use crypto::sha2::Sha256;
 use num_bigint::BigUint;
 use num_traits::One;
+use failure::Fail;
 
 const HASH_BYTE_SIZE: usize = 32;
 const DIFFICULTY: usize = 4;

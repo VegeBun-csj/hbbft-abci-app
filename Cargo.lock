@@ -1004,6 +1004,7 @@ name = "hbbft-blockchain"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "failure",
  "num-bigint",
  "num-traits 0.2.15",
  "rust-crypto",
