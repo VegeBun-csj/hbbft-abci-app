@@ -414,7 +414,7 @@ impl<C: Contribution, N: NodeId + DeserializeOwned + 'static> Hydrabadger<C, N> 
 
                         Ok(Either::A(peer))
                     }
-                    Err(err) => Either::B(future::err(err)),
+                    Err(err) => Err(Either::B(future::err(err))),
                 }
             })
             .map_err(move |err| {
@@ -563,7 +563,7 @@ impl<C: Contribution, N: NodeId + DeserializeOwned + 'static> Hydrabadger<C, N> 
                         local_sk.clone(),
                         None,
                         true,
-                    ).await?
+                    ).boxed().await
                 });
             }
             Ok(())
