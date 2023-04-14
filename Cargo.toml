@@ -1,2 +1,2 @@
 [workspace]
-members = ["hbbft-client", "hbbft-abci", "blockchain"]
+members = ["hbbft-node"]

@@ -17,7 +17,6 @@ use std::{
         HashMap,
     },
 };
-// use tokio::prelude::*;
 use futures::{ Poll, Async, Future, task, Stream, Sink};
 
 /// The state for each connected client.

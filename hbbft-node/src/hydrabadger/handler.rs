@@ -19,7 +19,6 @@ use hbbft::{
     Target,
 };
 use std::{cell::RefCell, collections::HashMap};
-// use tokio::{self, prelude::*};
 use tokio::*;
 use futures::{ Poll, Async, Future, task, Stream};
 

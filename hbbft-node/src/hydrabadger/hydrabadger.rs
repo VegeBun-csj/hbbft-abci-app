@@ -37,17 +37,6 @@ use tokio::sync::mpsc::{channel, Receiver};
 use tokio::sync::oneshot::Sender as OneShotSender;
 
 
-// import ABCI lib
-use tendermint_abci::{Client as AbciClient, ClientBuilder};
-use tendermint_proto::abci::{
-    RequestBeginBlock, RequestDeliverTx, RequestEndBlock, RequestInfo, RequestInitChain,
-    RequestQuery, ResponseQuery,
-};
-use tendermint_proto::types::Header;
-
-// hbbft abci
-use hbbft_abci::{AbciApi, Engine, AbciQueryQuery};
-
 // The number of random transactions to generate per interval.
 const DEFAULT_TXN_GEN_COUNT: usize = 5;
 // The interval between randomly generated transactions.

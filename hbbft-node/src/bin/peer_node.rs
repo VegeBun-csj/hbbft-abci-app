@@ -3,15 +3,14 @@
 extern crate chrono;
 extern crate clap;
 extern crate env_logger;
-extern crate hydrabadger;
+extern crate hbbft_node;
 extern crate rand;
 #[macro_use]
 extern crate serde_derive;
 
 use chrono::Local;
 use clap::{App, Arg, ArgMatches};
-use hydrabadger::{Config, Hydrabadger, Uid};
-use hbbft_blockchain::blockchain::{Blockchain, MiningError};
+use hbbft_node::{Config, Hydrabadger, Uid};
 use rand::{distributions::Standard, Rng};
 use std::collections::HashSet;
 use std::env;
@@ -19,7 +18,6 @@ use std::io::Write;
 use std::net::{SocketAddr, ToSocketAddrs};
 
 use tokio::sync::mpsc::{channel, Receiver};
-use hbbft_abci::{AbciApi, Engine};
 
 /// The default channel capacity.
 pub const CHANNEL_CAPACITY: usize = 1_000;
