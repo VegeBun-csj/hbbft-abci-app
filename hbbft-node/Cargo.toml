@@ -1,13 +1,7 @@
 [package]
 name = "hydrabadger"
 version = "0.1.0"
-authors = ["c0gent <nsan1129@gmail.com>"]
-autobins = false
-edition = "2018"
-
-# [[bin]]
-# name = "simulation"
-# path = "src/bin/simulation.rs"
+edition = "2021"
 
 [[bin]]
 name = "peer_node"
@@ -16,10 +10,6 @@ path = "src/bin/peer_node.rs"
 [features]
 # Used for debugging memory usage.
 exit_upon_epoch_1000 = []
-# Disables SIMD in reed-solomon-erasure, which currently doesn't work on Android.
-# no-simd = ["hbbft/no-simd"]
-# no-simd = ["hbbft/simd-accel"]
-
 
 [dependencies]
 log = "0.4"
