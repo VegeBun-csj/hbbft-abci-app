@@ -3,25 +3,20 @@
 extern crate chrono;
 extern crate clap;
 extern crate env_logger;
-extern crate hbbft_node;
+extern crate hydrabadger;
 extern crate rand;
 #[macro_use]
 extern crate serde_derive;
 
 use chrono::Local;
 use clap::{App, Arg, ArgMatches};
-use hbbft_node::{Config, Hydrabadger, Uid};
+// use hydrabadger::{Blockchain, Config, Hydrabadger, MiningError, Uid};
+use hydrabadger::{ Config, Hydrabadger, Uid};
 use rand::{distributions::Standard, Rng};
 use std::collections::HashSet;
 use std::env;
 use std::io::Write;
 use std::net::{SocketAddr, ToSocketAddrs};
-
-use tokio::sync::mpsc::{channel, Receiver};
-
-/// The default channel capacity.
-pub const CHANNEL_CAPACITY: usize = 1_000;
-
 
 /// Returns parsed command line arguments.
 fn arg_matches<'a>() -> ArgMatches<'a> {
@@ -84,18 +79,18 @@ fn arg_matches<'a>() -> ArgMatches<'a> {
 }
 
 /// Begins mining.
-fn mine() -> Result<(), MiningError> {
-    let mut chain = Blockchain::new()?;
-    println!("Send 1 Hydradollar to Bob");
-    chain.add_block("1HD->Bob")?;
-    chain.add_block("0.5HD->Bob")?;
-    chain.add_block("1.5HD->Bob")?;
+// fn mine() -> Result<(), MiningError> {
+//     let mut chain = Blockchain::new()?;
+//     println!("Send 1 Hydradollar to Bob");
+//     chain.add_block("1HD->Bob")?;
+//     chain.add_block("0.5HD->Bob")?;
+//     chain.add_block("1.5HD->Bob")?;
 
-    println!("Traversing blockchain:\n");
-    chain.traverse();
+//     println!("Traversing blockchain:\n");
+//     chain.traverse();
 
-    Ok(())
-}
+//     Ok(())
+// }
 
 /// A transaction.
 #[derive(Serialize, Deserialize, Eq, PartialEq, Hash, Ord, PartialOrd, Debug, Clone)]
@@ -112,7 +107,6 @@ impl Transaction {
     }
 }
 
-#[tokio::main]
 fn main() {
     env_logger::Builder::new()
         .format(|buf, record| {
@@ -182,13 +176,18 @@ fn main() {
             .collect::<Vec<_>>()
     };
 
-    let app_address = String::from("127.0.0.1:26668").parse::<SocketAddr>().unwrap();
-    let store_path = "./dara";
+    hb.run_node(Some(remote_addresses), Some(gen_txn));
 
-    // let (tx_abci_queries, rx_abci_queries) = channel(CHANNEL_CAPACITY);
-
-    // let mut hbbft_engine = Engine::new(app_address, store_path, rx_abci_queries);
-
-    hb.run_node(Some(remote_addresses), Some(gen_txn), app_address, store_path);
-
+    // match mine() {
+    //     Ok(_) => {},
+    //     Err(err) => println!("Error: {}", err),
+    // }
 }
+
+
+
+/* 
+
+这个例子主要是介绍了DHB的用法，没有涉及broadcast，aba，subset的调用
+
+*/

@@ -34,9 +34,8 @@ extern crate byteorder;
 extern crate bytes;
 extern crate rand;
 extern crate tokio;
-/* extern crate tokio_codec;
-extern crate tokio_io; */
-extern crate tokio_util;
+extern crate tokio_codec;
+extern crate tokio_io;
 extern crate uuid;
 #[macro_use]
 extern crate serde_derive;
@@ -55,6 +54,8 @@ use alloc_system::System;
 #[global_allocator]
 static A: System = System;
 
+// pub mod network;
+// pub mod blockchain;
 pub mod hydrabadger;
 pub mod peer;
 
@@ -81,16 +82,15 @@ use std::{
     ops::Deref,
 };
 use tokio::{
+    codec::{Framed, LengthDelimitedCodec},
     io,
     net::TcpStream,
+    prelude::*,
 };
-
-use tokio_util::codec::{Framed, LengthDelimitedCodec};
-use futures::{ Poll, Async, Future, task, Stream, Sink};
-use futures_util::sink::SinkExt;
 use uuid::Uuid;
-use core::pin::Pin;
+use std::sync::Arc;
 
+// pub use crate::blockchain::{Blockchain, MiningError};
 pub use crate::hydrabadger::{Config, Hydrabadger, HydrabadgerWeak};
 // TODO: Create a separate, library-wide error type.
 pub use crate::hydrabadger::key_gen;
@@ -228,7 +228,7 @@ pub struct NetworkNodeInfo<N> {
 type ActiveNetworkInfo<N> = (
     Vec<NetworkNodeInfo<N>>,
     PublicKeySet,
-    BTreeMap<N, PublicKey>,
+    // BTreeMap<N, PublicKey>,
 );
 
 /// The current state of the network.
@@ -237,7 +237,7 @@ pub enum NetworkState<N: Ord> {
     None,
     Unknown(Vec<NetworkNodeInfo<N>>),
     AwaitingMorePeersForKeyGeneration(Vec<NetworkNodeInfo<N>>),
-    GeneratingKeys(Vec<NetworkNodeInfo<N>>, BTreeMap<N, PublicKey>),
+    GeneratingKeys(Vec<NetworkNodeInfo<N>>, Arc<BTreeMap<N, PublicKey>>),
     Active(ActiveNetworkInfo<N>),
 }
 
@@ -245,6 +245,7 @@ pub enum NetworkState<N: Ord> {
 ///
 /// [`Message`](enum.WireMessageKind.html#variant.Message) variants are among
 /// those verified.
+/// 定义了网络中节点之间消息的类型
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum WireMessageKind<C, N: Ord> {
     HelloFromValidator(N, InAddr, PublicKey, NetworkState<N>),
@@ -269,6 +270,7 @@ pub enum WireMessageKind<C, N: Ord> {
 }
 
 /// Messages sent over the network between nodes.
+/// 网络中节点之间传播的消息
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct WireMessage<C, N: Ord> {
     kind: WireMessageKind<C, N>,
@@ -435,7 +437,7 @@ impl<C: Contribution, N: NodeId + Serialize> Sink for WireMessages<C, N> {
             Ok(s) => serialized.extend_from_slice(&s),
             Err(err) => return Err(Error::Io(io::Error::new(io::ErrorKind::Other, err))),
         }
-        match Pin::new(&mut self.framed).start_send(serialized.freeze()) {
+        match self.framed.start_send(serialized.freeze()) {
             Ok(async_sink) => match async_sink {
                 AsyncSink::Ready => Ok(AsyncSink::Ready),
                 AsyncSink::NotReady(_) => Ok(AsyncSink::NotReady(item)),
