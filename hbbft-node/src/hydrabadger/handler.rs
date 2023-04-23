@@ -425,8 +425,6 @@ impl<C: Contribution, N: NodeId> Handler<C, N> {
         Ok(())
     }
 
-
-    // 处理节点内部的消息
     fn handle_internal_message(
         &self,
         i_msg: InternalMessage<C, N>,
@@ -435,10 +433,8 @@ impl<C: Contribution, N: NodeId> Handler<C, N> {
         // let mut state_guard = self.hdb.state_mut();
         // let mut state = &mut state_guard;
 
-        // 解构
         let (src_nid, src_out_addr, w_msg) = i_msg.into_parts();
 
-        // NOTE: 根据InternalMessageKind具体的类型来进行相应的处理
         match w_msg {
             // New incoming connection:
             InternalMessageKind::NewIncomingConnection(
@@ -615,9 +611,6 @@ impl<C: Contribution, N: NodeId> Handler<C, N> {
     }
 }
 
-
-// 这里应该是重写了future的poll方法，这个poll方法的实现就是为了推动这个future的执行的，
-// 这个方法是自动触发的，所以会一直调用这个方法，直到达到某个条件，最终返回ready才算执行完
 impl<C: Contribution, N: NodeId> Future for Handler<C, N> {
     type Item = ();
     type Error = Error;
@@ -630,13 +623,9 @@ impl<C: Contribution, N: NodeId> Future for Handler<C, N> {
         let mut state = self.hdb.state_mut();
 
         // Handle incoming internal messages:
-        // 这里使用一个循环来一直监听peer_internal_rx有没有接收到数据
         for i in 0..MESSAGES_PER_TICK {
-            // 如果这里peer_internal_rx接收到管道的数据，说明数据已经ready，就可以推进
             match self.peer_internal_rx.poll() {
                 Ok(Async::Ready(Some(i_msg))) => {
-                    // NOTE: 调用自己的handle_internal_message，因为此时已经从管道获取到数据，接下来就是处理这个消息
-                    // 这里其实简单理解就是通过传来的消息，以及当前的状态来更新状态
                     self.handle_internal_message(i_msg, &mut state)?;
 
                     // Exceeded max messages per tick, schedule notification:
@@ -679,7 +668,6 @@ impl<C: Contribution, N: NodeId> Future for Handler<C, N> {
                 info!("A HONEY BADGER BATCH WITH CONTRIBUTIONS IS BEING STREAMED...");
                 debug!("Batch:\n{:?}", batch);
 
-                //NOTE: 产生最终的batch！！！
                 let batch_epoch = batch.epoch();
                 let prev_epoch = self.hdb.set_current_epoch(batch_epoch + 1);
                 assert_eq!(prev_epoch, batch_epoch);
@@ -747,14 +735,14 @@ impl<C: Contribution, N: NodeId> Future for Handler<C, N> {
             for hb_msg in step.messages.drain(..) {
                 trace!("hydrabadger::Handler: Forwarding message: {:?}", hb_msg);
                 match hb_msg.target {
-                    Target::Nodes(p_nid) => {
-                        // FIXME: 后续需要更改为只向validator发送消息
-                        peers.wire_to_all(WireMessage::message(
-                            self.hdb.node_id().clone(),
-                            hb_msg.message,
-                        ));
+                    Target::Node(p_nid) => {
+                        peers.wire_to(
+                            p_nid,
+                            WireMessage::message(self.hdb.node_id().clone(), hb_msg.message),
+                            0,
+                        );
                     }
-                    Target::AllExcept(p_nid) => {
+                    Target::All => {
                         peers.wire_to_all(WireMessage::message(
                             self.hdb.node_id().clone(),
                             hb_msg.message,

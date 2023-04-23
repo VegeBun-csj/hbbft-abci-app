@@ -55,7 +55,7 @@ use alloc_system::System;
 static A: System = System;
 
 // pub mod network;
-// pub mod blockchain;
+pub mod blockchain;
 pub mod hydrabadger;
 pub mod peer;
 
@@ -88,9 +88,8 @@ use tokio::{
     prelude::*,
 };
 use uuid::Uuid;
-use std::sync::Arc;
 
-// pub use crate::blockchain::{Blockchain, MiningError};
+pub use crate::blockchain::{Blockchain, MiningError};
 pub use crate::hydrabadger::{Config, Hydrabadger, HydrabadgerWeak};
 // TODO: Create a separate, library-wide error type.
 pub use crate::hydrabadger::key_gen;
@@ -98,36 +97,29 @@ pub use crate::hydrabadger::Error;
 pub use crate::hydrabadger::StateDsct;
 pub use hbbft::dynamic_honey_badger::Batch;
 
+//TODO: 后续需要对管道大小进行限制
 /// Transmit half of the wire message channel.
-// TODO: Use a bounded tx/rx (find a sensible upper bound):
 type WireTx<C, N> = mpsc::UnboundedSender<WireMessage<C, N>>;
 
 /// Receive half of the wire message channel.
-// TODO: Use a bounded tx/rx (find a sensible upper bound):
 type WireRx<C, N> = mpsc::UnboundedReceiver<WireMessage<C, N>>;
 
 /// Transmit half of the internal message channel.
-// TODO: Use a bounded tx/rx (find a sensible upper bound):
 type InternalTx<C, N> = mpsc::UnboundedSender<InternalMessage<C, N>>;
 
 /// Receive half of the internal message channel.
-// TODO: Use a bounded tx/rx (find a sensible upper bound):
 type InternalRx<C, N> = mpsc::UnboundedReceiver<InternalMessage<C, N>>;
 
 /// Transmit half of the batch output channel.
-// TODO: Use a bounded tx/rx (find a sensible upper bound):
 type BatchTx<C, N> = mpsc::UnboundedSender<Batch<C, N>>;
 
 /// Receive half of the batch output channel.
-// TODO: Use a bounded tx/rx (find a sensible upper bound):
 pub type BatchRx<C, N> = mpsc::UnboundedReceiver<Batch<C, N>>;
 
 /// Transmit half of the epoch number output channel.
-// TODO: Use a bounded tx/rx (find a sensible upper bound):
 type EpochTx = mpsc::UnboundedSender<u64>;
 
 /// Receive half of the epoch number output channel.
-// TODO: Use a bounded tx/rx (find a sensible upper bound):
 pub type EpochRx = mpsc::UnboundedReceiver<u64>;
 
 pub trait Contribution:
@@ -228,7 +220,7 @@ pub struct NetworkNodeInfo<N> {
 type ActiveNetworkInfo<N> = (
     Vec<NetworkNodeInfo<N>>,
     PublicKeySet,
-    // BTreeMap<N, PublicKey>,
+    BTreeMap<N, PublicKey>,
 );
 
 /// The current state of the network.
@@ -237,7 +229,7 @@ pub enum NetworkState<N: Ord> {
     None,
     Unknown(Vec<NetworkNodeInfo<N>>),
     AwaitingMorePeersForKeyGeneration(Vec<NetworkNodeInfo<N>>),
-    GeneratingKeys(Vec<NetworkNodeInfo<N>>, Arc<BTreeMap<N, PublicKey>>),
+    GeneratingKeys(Vec<NetworkNodeInfo<N>>, BTreeMap<N, PublicKey>),
     Active(ActiveNetworkInfo<N>),
 }
 
@@ -245,7 +237,6 @@ pub enum NetworkState<N: Ord> {
 ///
 /// [`Message`](enum.WireMessageKind.html#variant.Message) variants are among
 /// those verified.
-/// 定义了网络中节点之间消息的类型
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum WireMessageKind<C, N: Ord> {
     HelloFromValidator(N, InAddr, PublicKey, NetworkState<N>),
@@ -270,7 +261,6 @@ pub enum WireMessageKind<C, N: Ord> {
 }
 
 /// Messages sent over the network between nodes.
-/// 网络中节点之间传播的消息
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct WireMessage<C, N: Ord> {
     kind: WireMessageKind<C, N>,

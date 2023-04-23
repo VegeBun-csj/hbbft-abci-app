@@ -10,8 +10,7 @@ extern crate serde_derive;
 
 use chrono::Local;
 use clap::{App, Arg, ArgMatches};
-// use hydrabadger::{Blockchain, Config, Hydrabadger, MiningError, Uid};
-use hydrabadger::{ Config, Hydrabadger, Uid};
+use hydrabadger::{Blockchain, Config, Hydrabadger, MiningError, Uid};
 use rand::{distributions::Standard, Rng};
 use std::collections::HashSet;
 use std::env;
@@ -79,18 +78,18 @@ fn arg_matches<'a>() -> ArgMatches<'a> {
 }
 
 /// Begins mining.
-// fn mine() -> Result<(), MiningError> {
-//     let mut chain = Blockchain::new()?;
-//     println!("Send 1 Hydradollar to Bob");
-//     chain.add_block("1HD->Bob")?;
-//     chain.add_block("0.5HD->Bob")?;
-//     chain.add_block("1.5HD->Bob")?;
+fn mine() -> Result<(), MiningError> {
+    let mut chain = Blockchain::new()?;
+    println!("Send 1 Hydradollar to Bob");
+    chain.add_block("1HD->Bob")?;
+    chain.add_block("0.5HD->Bob")?;
+    chain.add_block("1.5HD->Bob")?;
 
-//     println!("Traversing blockchain:\n");
-//     chain.traverse();
+    println!("Traversing blockchain:\n");
+    chain.traverse();
 
-//     Ok(())
-// }
+    Ok(())
+}
 
 /// A transaction.
 #[derive(Serialize, Deserialize, Eq, PartialEq, Hash, Ord, PartialOrd, Debug, Clone)]
@@ -167,7 +166,6 @@ fn main() {
         cfg.output_extra_delay_ms = oed.parse().expect("Invalid output extra delay.");
     }
 
-    // 这里开始将所有的配置注入到一个Hydrabadger实例
     let hb = Hydrabadger::new(bind_address, cfg, Uid::new());
 
     let gen_txn = |txn_gen_count, txn_gen_bytes| {
@@ -183,11 +181,3 @@ fn main() {
     //     Err(err) => println!("Error: {}", err),
     // }
 }
-
-
-
-/* 
-
-这个例子主要是介绍了DHB的用法，没有涉及broadcast，aba，subset的调用
-
-*/

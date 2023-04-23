@@ -8,7 +8,6 @@ name = "peer_node"
 path = "src/bin/peer_node.rs"
 
 [features]
-# Used for debugging memory usage.
 exit_upon_epoch_1000 = []
 
 [dependencies]
@@ -25,7 +24,7 @@ num-bigint = "*"
 colored = "*"
 itertools = "*"
 pairing = "*"
-rand = "0.8.5"
+rand = "0.6"
 serde = "1"
 serde_bytes = "~0.10.4"
 serde_derive = "1"
@@ -42,13 +41,7 @@ uuid = { version = "0.6", features = ["v4", "serde"] }
 byteorder = "1"
 parking_lot = "0.6"
 clear_on_drop = "0.2"
-hbbft = { git = "https://github.com/VegeBun-csj/hbbft.git", branch = "master" }
-
-
-# [dependencies.hbbft]
-# version = "0.1.0"
-# git = "https://github.com/poanetwork/hbbft.git"
-# branch = "master"
+hbbft = { git = "https://github.com/VegeBun-csj/hbbft.git", branch = "0.1.0" }
 
 [profile.release]
 debug = true
