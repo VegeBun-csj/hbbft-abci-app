@@ -90,36 +90,36 @@ use tokio::{
 use uuid::Uuid;
 
 pub use crate::blockchain::{Blockchain, MiningError};
-pub use crate::hydrabadger::{Config, Hydrabadger, HydrabadgerWeak};
+pub use crate::hydrabadger::{Config, Hydrabadger};
 // TODO: Create a separate, library-wide error type.
 pub use crate::hydrabadger::key_gen;
 pub use crate::hydrabadger::Error;
 pub use crate::hydrabadger::StateDsct;
 pub use hbbft::dynamic_honey_badger::Batch;
 
-//TODO: 后续需要对管道大小进行限制
-/// Transmit half of the wire message channel.
+//TODO: 后续需要对这里所有的管道大小进行限制
+/// sender of wire message channel.
 type WireTx<C, N> = mpsc::UnboundedSender<WireMessage<C, N>>;
 
-/// Receive half of the wire message channel.
+/// receiver of wire message channel.
 type WireRx<C, N> = mpsc::UnboundedReceiver<WireMessage<C, N>>;
 
-/// Transmit half of the internal message channel.
+/// sender of internal message channel.
 type InternalTx<C, N> = mpsc::UnboundedSender<InternalMessage<C, N>>;
 
-/// Receive half of the internal message channel.
+/// receiver of internal message channel.
 type InternalRx<C, N> = mpsc::UnboundedReceiver<InternalMessage<C, N>>;
 
-/// Transmit half of the batch output channel.
+/// sender of batch output channel.
 type BatchTx<C, N> = mpsc::UnboundedSender<Batch<C, N>>;
 
-/// Receive half of the batch output channel.
+/// receiver of batch output channel.
 pub type BatchRx<C, N> = mpsc::UnboundedReceiver<Batch<C, N>>;
 
-/// Transmit half of the epoch number output channel.
+/// sender of epoch number output channel.
 type EpochTx = mpsc::UnboundedSender<u64>;
 
-/// Receive half of the epoch number output channel.
+/// receiver of epoch number output channel.
 pub type EpochRx = mpsc::UnboundedReceiver<u64>;
 
 pub trait Contribution:

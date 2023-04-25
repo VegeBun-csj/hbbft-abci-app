@@ -166,14 +166,17 @@ fn main() {
         cfg.output_extra_delay_ms = oed.parse().expect("Invalid output extra delay.");
     }
 
+    // 这里开始将所有的配置注入到一个Hydrabadger实例（节点），每个节点都有一个UID进行标识
     let hb = Hydrabadger::new(bind_address, cfg, Uid::new());
 
+    // 这里是一个gen_txn闭包，在实际使用的时候会生成一些随机的交易
     let gen_txn = |txn_gen_count, txn_gen_bytes| {
         (0..txn_gen_count)
             .map(|_| Transaction::random(txn_gen_bytes))
             .collect::<Vec<_>>()
     };
 
+    // 启动节点
     hb.run_node(Some(remote_addresses), Some(gen_txn));
 
     // match mine() {

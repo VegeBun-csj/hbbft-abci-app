@@ -7,9 +7,6 @@ edition = "2021"
 name = "peer_node"
 path = "src/bin/peer_node.rs"
 
-[features]
-exit_upon_epoch_1000 = []
-
 [dependencies]
 log = "0.4"
 env_logger = "0.5"

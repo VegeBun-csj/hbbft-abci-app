@@ -477,6 +477,8 @@ impl<C: Contribution, N: NodeId> StateMachine<C, N> {
                 let step_opt = Some({
                     let dhb = dhb.as_mut().unwrap();
                     match iom {
+                        // NOTE: 核心方法
+                        // 本地honeybadger实例可以直接propose，就可以得到最终在本地的batch
                         InputOrMessage::Contribution(contrib) => dhb.propose(contrib, &mut rng),
                         InputOrMessage::Change(change) => dhb.vote_for(change),
                         InputOrMessage::Message(src_nid, msg) => {
@@ -487,7 +489,7 @@ impl<C: Contribution, N: NodeId> StateMachine<C, N> {
 
                 match step_opt {
                     Some(ref step) => match step {
-                        Ok(s) => trace!("State::handle_iom: DHB output: {:?}", s.output),
+                        Ok(s) => debug!("State::handle_iom: DHB output: {:?}", s.output),
                         Err(err) => error!("State::handle_iom: DHB output error: {:?}", err),
                     },
                     None => trace!("State::handle_iom: DHB Output is `None`"),

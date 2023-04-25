@@ -24,17 +24,16 @@ use tokio::{self, prelude::*};
 /// Hydrabadger event (internal message) handler.
 pub struct Handler<C: Contribution, N: NodeId> {
     hdb: Hydrabadger<C, N>,
-    // TODO: Use a bounded tx/rx (find a sensible upper bound):
+    // TODO: 
     peer_internal_rx: InternalRx<C, N>,
-    /// Outgoing wire message queue.
+    /// 外部消息队列(多生产者多消费者队列)
     wire_queue: SegQueue<(N, WireMessage<C, N>, usize)>,
-    /// Output from HoneyBadger.
+    /// 存储HoneyBadger输出的队列
     step_queue: SegQueue<Step<C, N>>,
-    // TODO: Use a bounded tx/rx (find a sensible upper bound):
+    // TODO: 
     batch_tx: BatchTx<C, N>,
-    /// Distributed synchronous key generation instances.
-    //
-    // TODO: Move these to separate threads/tasks.
+    /// DKG的实例
+    // TODO: 这个后续可以作为一个单独的线程
     key_gens: RefCell<HashMap<Uid, key_gen::Machine<N>>>,
 }
 
@@ -90,15 +89,19 @@ impl<C: Contribution, N: NodeId> Handler<C, N> {
         Ok(())
     }
 
+
+    // NOTE: 核心方法，处理相关的input和消息
     fn handle_iom(
         &self,
         iom: InputOrMessage<C, N>,
         state: &mut StateMachine<C, N>,
     ) -> Result<(), Error> {
         trace!("hydrabadger::Handler: About to handle_iom: {:?}", iom);
+        // 获取处理的最终结果，对于contribution而言，这里就是最终产生的batch
         if let Some(step_res) = state.handle_iom(iom) {
             let step = step_res.map_err(Error::HbStep)?;
             trace!("hydrabadger::Handler: Message step result added to queue....");
+            // push到记录batch的队列，等待消费
             self.step_queue.push(step);
         }
         Ok(())
@@ -425,16 +428,16 @@ impl<C: Contribution, N: NodeId> Handler<C, N> {
         Ok(())
     }
 
+    // NOTE: 处理节点内部的消息，这是一个内部消息的中转方法，所有的内部消息都会在这里处理
     fn handle_internal_message(
         &self,
         i_msg: InternalMessage<C, N>,
         state: &mut StateMachine<C, N>,
     ) -> Result<(), Error> {
-        // let mut state_guard = self.hdb.state_mut();
-        // let mut state = &mut state_guard;
-
+        // 解构
         let (src_nid, src_out_addr, w_msg) = i_msg.into_parts();
 
+        // NOTE: 根据InternalMessageKind具体的类型来进行相应的处理
         match w_msg {
             // New incoming connection:
             InternalMessageKind::NewIncomingConnection(
@@ -494,6 +497,7 @@ impl<C: Contribution, N: NodeId> Handler<C, N> {
                 state.update_peer_connection_added(&peers);
             }
 
+            // 处理contribution类型的消息（从一个节点的视角来说，这里就是一个子区块的交易）
             InternalMessageKind::HbContribution(contrib) => {
                 self.handle_iom(InputOrMessage::Contribution(contrib), state)?;
             }
@@ -611,6 +615,9 @@ impl<C: Contribution, N: NodeId> Handler<C, N> {
     }
 }
 
+// NOTE: 这里是重写future的poll方法，这个poll方法的实现就是为了推动这个future的执行的，
+// 这个方法是自动触发的，所以会一直调用这个方法，直到达到某个条件，最终返回ready才算执行完
+// 也就是说，整个节点的状态，消息处理怎么推进，共识结果怎么处理，都是在这个方法里面去定义的
 impl<C: Contribution, N: NodeId> Future for Handler<C, N> {
     type Item = ();
     type Error = Error;
@@ -622,9 +629,12 @@ impl<C: Contribution, N: NodeId> Future for Handler<C, N> {
 
         let mut state = self.hdb.state_mut();
 
-        // Handle incoming internal messages:
+        // 1. NOTE: 处理要过来的internal messages，这里有一个循环限制次数，防止当前线程过多占用导致阻塞
         for i in 0..MESSAGES_PER_TICK {
+            // 首先从peer_internal_rx中轮询内部消息
             match self.peer_internal_rx.poll() {
+                // 如果成功接收到一个内部消息，就会调用handle_internal_message来处理，这里需要注意就是
+                // 如果这个时候线程占用结束，下一次开启的时候线程内部会有notify方法重新唤醒
                 Ok(Async::Ready(Some(i_msg))) => {
                     self.handle_internal_message(i_msg, &mut state)?;
 
@@ -633,18 +643,21 @@ impl<C: Contribution, N: NodeId> Future for Handler<C, N> {
                         task::current().notify();
                     }
                 }
+                // 断开连接
                 Ok(Async::Ready(None)) => {
                     // The sending ends have all dropped.
                     info!("Shutting down Handler...");
                     return Ok(Async::Ready(()));
                 }
+                // 没有收到内部消息
                 Ok(Async::NotReady) => {}
                 Err(()) => return Err(Error::HydrabadgerHandlerPoll),
             };
         }
 
-        let peers = self.hdb.peers();
 
+        // 2. NOTE: 处理要发出去的消息
+        let peers = self.hdb.peers();
         // Process outgoing wire queue:
         while let Some((tar_nid, msg, retry_count)) = self.wire_queue.pop() {
             if retry_count < WIRE_MESSAGE_RETRY_MAX {
@@ -660,22 +673,16 @@ impl<C: Contribution, N: NodeId> Future for Handler<C, N> {
 
         trace!("hydrabadger::Handler: Processing step queue....");
 
-        // let mut state = self.hdb.state_mut();
 
-        // Process all honey badger output batches:
+        // 3. NOTE: 处理hbbft的输出，也就是最终的batch，这是重点
         while let Some(mut step) = self.step_queue.pop() {
             for batch in step.output.drain(..) {
                 info!("A HONEY BADGER BATCH WITH CONTRIBUTIONS IS BEING STREAMED...");
-                debug!("Batch:\n{:?}", batch);
+                // info!("Batch:\n{:?}", batch);
 
                 let batch_epoch = batch.epoch();
                 let prev_epoch = self.hdb.set_current_epoch(batch_epoch + 1);
                 assert_eq!(prev_epoch, batch_epoch);
-
-                // TODO: Remove
-                if cfg!(exit_upon_epoch_1000) && batch_epoch >= 1000 {
-                    return Ok(Async::Ready(()));
-                }
 
                 if let Some(jp) = batch.join_plan() {
                     // FIXME: Only sent to unconnected nodes:
@@ -683,6 +690,7 @@ impl<C: Contribution, N: NodeId> Future for Handler<C, N> {
                     peers.wire_to_all(WireMessage::join_plan(jp));
                 }
 
+                // 看batch中记录了当前网络有哪些变动，比如节点变更
                 match batch.change() {
                     ChangeState::None => {}
                     ChangeState::InProgress(_change) => {}
@@ -709,7 +717,7 @@ impl<C: Contribution, N: NodeId> Future for Handler<C, N> {
                     ::std::thread::sleep(::std::time::Duration::from_millis(extra_delay));
                 }
 
-                // Send the batch along its merry way:
+                // 通过batch所在的通道，发送当前产生的所有交易
                 if !self.batch_tx.is_closed() {
                     if let Err(_err) = self.batch_tx.unbounded_send(batch) {
                         error!("Unable to send batch output. Shutting down...");
@@ -733,7 +741,7 @@ impl<C: Contribution, N: NodeId> Future for Handler<C, N> {
             }
 
             for hb_msg in step.messages.drain(..) {
-                trace!("hydrabadger::Handler: Forwarding message: {:?}", hb_msg);
+                // info!("hydrabadger::Handler: Forwarding message: {:?}", hb_msg);
                 match hb_msg.target {
                     Target::Node(p_nid) => {
                         peers.wire_to(

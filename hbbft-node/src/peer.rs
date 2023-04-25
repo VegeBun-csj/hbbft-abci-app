@@ -429,6 +429,7 @@ impl<C: Contribution, N: NodeId> Peer<C, N> {
 // iterate through entire list.
 #[derive(Debug)]
 pub struct Peers<C: Contribution, N: NodeId> {
+    // 记录本地节点连接的peer
     peers: HashMap<OutAddr, Peer<C, N>>,
     out_addrs: HashMap<N, OutAddr>,
     local_addr: InAddr,
